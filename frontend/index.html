@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cybershield AI</title>
+    <style>
+        body { background: #050a0f; color: #00f2ff; font-family: sans-serif; text-align: center; padding: 50px; }
+        .container { border: 1px solid #00f2ff; padding: 40px; display: inline-block; background: #0d161f; }
+        input { padding: 15px; width: 300px; background: #050a0f; color: white; border: 1px solid #00f2ff; }
+        button { padding: 15px; background: #00f2ff; color: #050a0f; font-weight: bold; cursor: pointer; }
+        #result { margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>CYBERSHIELD AI</h1>
+    <div class="container">
+        <input type="text" id="userInput" placeholder="Test here...">
+        <button onclick="scan()">SCAN</button>
+        <div id="result">Waiting...</div>
+    </div>
+    <script>
+        async function scan() {
+            const query = document.getElementById('userInput').value;
+            const resDiv = document.getElementById('result');
+            console.log("Button clicked! Sending:", query);
+            resDiv.innerText = "Connecting to Backend...";
+            
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/analyze?query=${encodeURIComponent(query)}`);
+                console.log("Response status:", response.status);
+                const data = await response.json();
+                resDiv.innerHTML = `<b>RESULT:</b> ${data.analysis}`;
+            } catch (err) {
+                console.error("Connection failed:", err);
+                resDiv.innerText = "ERROR: Could not reach the server at 127.0.0.1:8000";
+            }
+        }
+    </script>
+</body>
+</html>
