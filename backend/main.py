@@ -1,67 +1,51 @@
-
 import os
-
-import google.generativeai as genai
-
-from fastapi import FastAPI
-
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from google import genai
+from google.genai import types
 
+from .identity import CYBERSHIELD_PROMPT
 
-
-# Paste your NEW key here
-
-genai.configure(api_key="AIzaSyA0Ti4dU2Ximt6aFzYc9P2taYyERTE62MM")
-
-
+load_dotenv()
+api_key = os.getenv("CYBERSHIELD_API_KEY")
+client = genai.Client(api_key=api_key)
 
 app = FastAPI()
+templates = Jinja2Templates(directory="backend/templates")
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origins=["*"], 
+    allow_methods=["*"], 
+    allow_headers=["*"]
+)
 
+WORKING_MODEL = "gemini-3-flash-preview"
 
-
-def get_working_model():
-
-    # This lists all models available to your specific key/version
-
-    for m in genai.list_models():
-
-        if 'generateContent' in m.supported_generation_methods:
-
-            return m.name
-
-    return "models/gemini-1.5-flash" # Fallback
-
-
-
-WORKING_MODEL = get_working_model()
-
-print(f"--- SYSTEM ONLINE: USING MODEL {WORKING_MODEL} ---")
-
-
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "agent": 'CyberShield AI "El Guardian!🛡️"',
+        "mission": "FIFA World Cup 2026 Protection",
+        "status": "ACTIVE"
+    })
 
 @app.get("/analyze")
-
 async def analyze(query: str = "test"):
-
     try:
-
-        model = genai.GenerativeModel(WORKING_MODEL)
-
-        response = model.generate_content(query)
-
+        response = client.models.generate_content(
+            model=WORKING_MODEL,
+            contents=query,
+            config=types.GenerateContentConfig(
+                system_instruction=CYBERSHIELD_PROMPT
+            )
+        )
         return {"analysis": response.text}
-
     except Exception as e:
+        return {"analysis": f"Shield Error: {str(e)}"}
 
-        return {"analysis": f"Final Bridge Error: {str(e)}"}
-
-
-
-@app.get("/")
-
-async def root():
-
-    return {"status": "ALIVE", "model": WORKING_MODEL}
-
+print(f'--- SYSTEM ONLINE: CyberShield AI "El Guardian!🛡️" ACTIVATED ---')
